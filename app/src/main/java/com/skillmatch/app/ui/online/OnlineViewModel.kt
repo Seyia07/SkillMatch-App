@@ -177,7 +177,7 @@ class OnlineViewModel(app: Application) : AndroidViewModel(app) {
         if (e.isEmpty()) { updateAuth { copy(error = "Enter your Strathmore email address.") }; return }
         authCall {
             val dev = api.signupRequest(e)
-            updateAuth { copy(step = AuthStep.SignupCode, email = e, devCode = dev, info = "If this address can be used, a code has been sent to it.") }
+            updateAuth { copy(step = AuthStep.SignupCode, email = e, devCode = dev, info = "Code sent.") }
         }
     }
 
@@ -227,7 +227,7 @@ class OnlineViewModel(app: Application) : AndroidViewModel(app) {
         if (e.isEmpty()) { updateAuth { copy(error = "Enter your Strathmore email address.") }; return }
         authCall {
             val dev = api.forgot(e)
-            updateAuth { copy(step = AuthStep.ForgotReset, email = e, devCode = dev, info = "If this address has an account, a code has been sent to it.") }
+            updateAuth { copy(step = AuthStep.ForgotReset, email = e, devCode = dev, info = "Code sent.") }
         }
     }
 
@@ -292,7 +292,7 @@ class OnlineViewModel(app: Application) : AndroidViewModel(app) {
                     val all = api.saved()
                     all.copy(items = all.items.filter { j ->
                         (now.type == null || j.type == now.type) &&
-                            (q.isEmpty() || j.title.lowercase().contains(q) || j.organisation.lowercase().contains(q))
+                                (q.isEmpty() || j.title.lowercase().contains(q) || j.organisation.lowercase().contains(q))
                     })
                 } else {
                     val r = _state.value.research

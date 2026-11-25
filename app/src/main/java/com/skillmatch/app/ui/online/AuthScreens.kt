@@ -4,6 +4,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -48,7 +53,8 @@ import com.skillmatch.app.ui.theme.Sm
 @Composable
 fun AuthPane(state: OnlineState, vm: OnlineViewModel) {
     val auth = state.auth
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val screenHeight = maxHeight
         Image(
             painterResource(R.drawable.photo_team), contentDescription = null, contentScale = ContentScale.Crop,
             modifier = Modifier.matchParentSize(),
@@ -59,34 +65,41 @@ fun AuthPane(state: OnlineState, vm: OnlineViewModel) {
             ),
         )
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 12.dp)) {
-                ScreenTitle(
-                    when (auth.step) {
-                        AuthStep.Login -> "Welcome back"
-                        AuthStep.SignupEmail, AuthStep.SignupCode, AuthStep.SignupDetails -> "Create your account"
-                        AuthStep.ForgotEmail, AuthStep.ForgotReset -> "Reset your password"
-                    },
-                    Color.White,
-                )
-                Text(
-                    "Checked internship and WBL listings, with your fit shown requirement by requirement.",
-                    color = Sm.PlumTint, style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                state.notice?.let { NoticeBanner(it, vm::clearNotice) }
-                auth.error?.let { MessageBanner(it, MessageKind.Error) }
-                auth.info?.let { MessageBanner(it, MessageKind.Info) }
-                auth.devCode?.let { MessageBanner("Demo code: $it", MessageKind.Warning) }
-                when (auth.step) {
-                    AuthStep.Login -> LoginStep(auth, vm)
-                    AuthStep.SignupEmail -> SignupEmailStep(auth, vm)
-                    AuthStep.SignupCode -> SignupCodeStep(auth, vm)
-                    AuthStep.SignupDetails -> SignupDetailsStep(auth, vm)
-                    AuthStep.ForgotEmail -> ForgotEmailStep(auth, vm)
-                    AuthStep.ForgotReset -> ForgotResetStep(auth, vm)
+            Column(
+                Modifier.fillMaxWidth().heightIn(min = screenHeight),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    ScreenTitle(
+                        when (auth.step) {
+                            AuthStep.Login -> "Welcome back"
+                            AuthStep.SignupEmail, AuthStep.SignupCode, AuthStep.SignupDetails -> "Create your account"
+                            AuthStep.ForgotEmail, AuthStep.ForgotReset -> "Reset your password"
+                        },
+                        Color.White,
+                        Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally),
+                    )
+                    Text(
+                        "Checked internship and WBL listings, with your fit shown requirement by requirement.",
+                        color = Sm.PlumTint, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
+                    )
                 }
-                Spacer(Modifier.height(8.dp))
+                Column(Modifier.widthIn(max = 480.dp).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    state.notice?.let { NoticeBanner(it, vm::clearNotice) }
+                    auth.error?.let { MessageBanner(it, MessageKind.Error) }
+                    auth.info?.let { MessageBanner(it, MessageKind.Info) }
+                    auth.devCode?.let { MessageBanner("Demo code: $it", MessageKind.Warning) }
+                    when (auth.step) {
+                        AuthStep.Login -> LoginStep(auth, vm)
+                        AuthStep.SignupEmail -> SignupEmailStep(auth, vm)
+                        AuthStep.SignupCode -> SignupCodeStep(auth, vm)
+                        AuthStep.SignupDetails -> SignupDetailsStep(auth, vm)
+                        AuthStep.ForgotEmail -> ForgotEmailStep(auth, vm)
+                        AuthStep.ForgotReset -> ForgotResetStep(auth, vm)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
             }
         }
     }
