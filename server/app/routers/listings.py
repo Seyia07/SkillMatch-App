@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_current_user
+from ..fitmodel import get_model
 from ..matching import FitResult, evaluate, student_evidence
 from ..models import Listing, Report, SavedListing, User
 
@@ -29,11 +30,29 @@ def _open(db: Session):
                                  or_(Listing.closing_date.is_(None), Listing.closing_date >= today))
 
 
+def _resume_text(user: User) -> str:
+    """The student's profile written as plain text, which is what the trained model reads."""
+    parts = []
+    if user.programme:
+        parts.append(f"Studying {user.programme}.")
+    if user.units:
+        parts.append("Units: " + ", ".join(user.units) + ".")
+    if user.skills:
+        parts.append("Skills: " + ", ".join(s.name for s in user.skills) + ".")
+    return " ".join(parts)
+
+
 def _fit(user: User, listing: Listing, evidence, canon) -> FitResult | None:
     if not evidence:
         return None
     reqs = [{"text": r.text, "skills": r.skills or []} for r in listing.requirements]
-    return evaluate(reqs, evidence, canon, [r["text"] for r in reqs])
+    fit = evaluate(reqs, evidence, canon, [r["text"] for r in reqs])  # per-requirement Met / Partly met / Missing
+    model = get_model()
+    if model is not None:  # the trained model gives the overall verdict and the ranking score
+        pred = model.predict(_resume_text(user), listing.description)
+        fit.overall, fit.label = pred.score, pred.label
+        fit.ai = {"label": pred.label, "probabilities": pred.probabilities, "model": "Logistic Regression + matching features"}
+    return fit
 
 
 def _summary(l: Listing, fit: FitResult | None, saved: bool) -> dict:
@@ -43,7 +62,7 @@ def _summary(l: Listing, fit: FitResult | None, saved: bool) -> dict:
         "closing_date": l.closing_date.isoformat() if l.closing_date else None,
         "flags": l.flags or [], "saved": saved,
         "fit": None if fit is None else {"overall": fit.overall, "label": fit.label, "met": fit.met,
-                                          "partly": fit.partly, "missing": fit.missing},
+                                          "partly": fit.partly, "missing": fit.missing, "ai": fit.ai},
     }
 
 
@@ -114,6 +133,7 @@ def listing_detail(listing_id: int, include_fit: bool = True, user: User = Depen
         "description": l.description, "contact_email": l.contact_email, "note": NOTE,
         "needs_skills": include_fit and not evidence,
         "engine": fit.engine if fit else None,
+        "ai": fit.ai if fit else None,
         "requirements": [
             {"text": r.text, "status": r.status, "score": r.score, "matched_with": r.matched_with, "note": r.note}
             for r in (fit.requirements if fit else [])

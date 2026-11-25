@@ -165,6 +165,7 @@ class FitResult:
     missing: int
     requirements: list[ReqResult] = field(default_factory=list)
     engine: str = ""
+    ai: dict | None = None  # the trained model's verdict: {"label", "probabilities", "model"}
 
 
 def _family_of(skill: str) -> set[str]:

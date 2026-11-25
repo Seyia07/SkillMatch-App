@@ -30,7 +30,6 @@ fun AccountScreen(state: OnlineState, vm: OnlineViewModel) {
     val p = state.profile
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
     var password by remember { mutableStateOf("") }
-    var showConnection by rememberSaveable { mutableStateOf(false) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -70,16 +69,11 @@ fun AccountScreen(state: OnlineState, vm: OnlineViewModel) {
             Text("How matching works", style = MaterialTheme.typography.titleMedium, color = Sm.PlumDark)
             Text(
                 "Each listing is split into its separate requirements. Your skills are compared with each one, and every requirement is marked Met, Partly met or Missing. " +
-                    "The overall fit is the share of requirements you meet. It is a guide only. Admins check each listing before it appears, and listings with warning signs are flagged.",
+                        "The overall fit is the share of requirements you meet. It is a guide only. Admins check each listing before it appears, and listings with warning signs are flagged.",
                 style = MaterialTheme.typography.bodyMedium, color = Sm.Muted,
             )
         }
 
-        SecondaryButton(
-            if (showConnection) "Hide server address" else "Server address",
-            onClick = { showConnection = !showConnection }, modifier = Modifier.fillMaxWidth(),
-        )
-        if (showConnection) ConnectionCard(state.serverUrl, state.connectionError, vm::setServerUrl)
 
         SecondaryButton("Log out", onClick = { vm.logout() }, modifier = Modifier.fillMaxWidth())
 

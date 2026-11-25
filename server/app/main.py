@@ -27,8 +27,9 @@ for r in (auth.router, me.router, listings.router, research.router, admin.router
 
 @app.get("/health")
 def health():
+    from .fitmodel import get_model
     from .matching import get_engine
-    return {"status": "ok", "engine": get_engine().name}
+    return {"status": "ok", "engine": get_engine().name, "trained_model": get_model() is not None}
 
 
 @app.get("/admin", include_in_schema=False)

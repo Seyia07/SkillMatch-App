@@ -4,8 +4,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.ui.text.style.TextAlign
@@ -53,8 +51,7 @@ import com.skillmatch.app.ui.theme.Sm
 @Composable
 fun AuthPane(state: OnlineState, vm: OnlineViewModel) {
     val auth = state.auth
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val screenHeight = maxHeight
+    Box(Modifier.fillMaxSize()) {
         Image(
             painterResource(R.drawable.photo_team), contentDescription = null, contentScale = ContentScale.Crop,
             modifier = Modifier.matchParentSize(),
@@ -64,42 +61,40 @@ fun AuthPane(state: OnlineState, vm: OnlineViewModel) {
                 Brush.verticalGradient(listOf(Sm.PlumDark.copy(alpha = 0.72f), Sm.PlumDark.copy(alpha = 0.45f), Sm.PlumDark.copy(alpha = 0.85f))),
             ),
         )
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            Column(
-                Modifier.fillMaxWidth().heightIn(min = screenHeight),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    ScreenTitle(
-                        when (auth.step) {
-                            AuthStep.Login -> "Welcome back"
-                            AuthStep.SignupEmail, AuthStep.SignupCode, AuthStep.SignupDetails -> "Create your account"
-                            AuthStep.ForgotEmail, AuthStep.ForgotReset -> "Reset your password"
-                        },
-                        Color.White,
-                        Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally),
-                    )
-                    Text(
-                        "Checked internship and WBL listings, with your fit shown requirement by requirement.",
-                        color = Sm.PlumTint, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
-                    )
-                }
-                Column(Modifier.widthIn(max = 480.dp).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    state.notice?.let { NoticeBanner(it, vm::clearNotice) }
-                    auth.error?.let { MessageBanner(it, MessageKind.Error) }
-                    auth.info?.let { MessageBanner(it, MessageKind.Info) }
-                    auth.devCode?.let { MessageBanner("Demo code: $it", MessageKind.Warning) }
+        // Centred when the content is short, scrolls when it is taller than the screen.
+        Column(
+            Modifier.fillMaxWidth().align(Alignment.Center).verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                ScreenTitle(
                     when (auth.step) {
-                        AuthStep.Login -> LoginStep(auth, vm)
-                        AuthStep.SignupEmail -> SignupEmailStep(auth, vm)
-                        AuthStep.SignupCode -> SignupCodeStep(auth, vm)
-                        AuthStep.SignupDetails -> SignupDetailsStep(auth, vm)
-                        AuthStep.ForgotEmail -> ForgotEmailStep(auth, vm)
-                        AuthStep.ForgotReset -> ForgotResetStep(auth, vm)
-                    }
-                    Spacer(Modifier.height(8.dp))
+                        AuthStep.Login -> "Welcome back"
+                        AuthStep.SignupEmail, AuthStep.SignupCode, AuthStep.SignupDetails -> "Create your account"
+                        AuthStep.ForgotEmail, AuthStep.ForgotReset -> "Reset your password"
+                    },
+                    Color.White,
+                    Modifier.fillMaxWidth().wrapContentWidth(Alignment.CenterHorizontally),
+                )
+                Text(
+                    "Checked internship and WBL listings, with your fit shown requirement by requirement.",
+                    color = Sm.PlumTint, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center,
+                )
+            }
+            Column(Modifier.widthIn(max = 480.dp).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                state.notice?.let { NoticeBanner(it, vm::clearNotice) }
+                auth.error?.let { MessageBanner(it, MessageKind.Error) }
+                auth.info?.let { MessageBanner(it, MessageKind.Info) }
+                auth.devCode?.let { MessageBanner("Demo code: $it", MessageKind.Warning) }
+                when (auth.step) {
+                    AuthStep.Login -> LoginStep(auth, vm)
+                    AuthStep.SignupEmail -> SignupEmailStep(auth, vm)
+                    AuthStep.SignupCode -> SignupCodeStep(auth, vm)
+                    AuthStep.SignupDetails -> SignupDetailsStep(auth, vm)
+                    AuthStep.ForgotEmail -> ForgotEmailStep(auth, vm)
+                    AuthStep.ForgotReset -> ForgotResetStep(auth, vm)
                 }
+                Spacer(Modifier.height(8.dp))
             }
         }
     }
@@ -170,7 +165,7 @@ private fun SignupDetailsStep(auth: AuthState, vm: OnlineViewModel) {
     var consent by rememberSaveable { mutableStateOf(false) }
     SmCard {
         Text("Email confirmed. Now set up your account.", style = MaterialTheme.typography.titleSmall)
-        SmTextField(password, { password = it }, "Password", password = true, supporting = "At least 8 characters. The server tells you if it is too weak.")
+        SmTextField(password, { password = it }, "Password", password = true)
         SmTextField(confirm, { confirm = it }, "Confirm password", password = true)
         Text("Year of study", style = MaterialTheme.typography.titleSmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

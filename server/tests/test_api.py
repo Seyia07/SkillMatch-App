@@ -149,6 +149,9 @@ def test_fit_per_requirement(client):
     assert status["Good communication skills"] == "Met"
     assert d["fit"]["met"] == 2 and d["fit"]["partly"] == 2 and d["fit"]["missing"] == 1
     assert "does not predict" in d["note"]
+    # the overall verdict comes from the trained model
+    assert d["ai"]["label"] in ("No Fit", "Potential Fit", "Good Fit") and len(d["ai"]["probabilities"]) == 3
+    assert d["fit"]["label"] == d["ai"]["label"]
 
 
 def test_java_is_not_javascript(client):
