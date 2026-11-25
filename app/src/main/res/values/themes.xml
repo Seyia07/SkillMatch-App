@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window theme only; the app's look comes from Compose (ui/theme). -->
+    <style name="Theme.SkillMatch" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/baby_blue_bg</item>
+        <item name="android:statusBarColor">@color/plum_dark</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkillMatch admin</title>
+<style>
+  :root { --plum:#5B2A55; --dark:#3F1C3B; --blue:#EEF7FC; --line:#A9CFE6; --berry:#A3324F; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.5 system-ui, sans-serif; background:var(--blue); color:#22181F; }
+  header { background:var(--dark); color:#fff; padding:14px 20px; display:flex; gap:16px; align-items:center; }
+  header h1 { font-size:20px; margin:0; flex:1; }
+  main { max-width:960px; margin:0 auto; padding:20px; }
+  nav { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  button { background:var(--plum); color:#fff; border:0; border-radius:10px; padding:10px 16px; font:inherit; font-weight:600; cursor:pointer; }
+  button.alt { background:#fff; color:var(--plum); border:2px solid var(--plum); }
+  button.bad { background:var(--berry); }
+  button:disabled { opacity:.5; cursor:default; }
+  nav button.on { background:var(--dark); }
+  .card { background:#fff; border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 1px 4px #0002; }
+  label { display:block; font-weight:600; margin:10px 0 4px; }
+  input, select, textarea { width:100%; padding:10px; border:2px solid var(--line); border-radius:10px; font:inherit; }
+  textarea { min-height:140px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .msg { padding:10px 14px; border-radius:10px; margin:10px 0; }
+  .msg.err { background:#F9E4EA; color:#8A2440; } .msg.ok { background:#E3F2E8; color:#1E5C38; }
+  .flag { background:#F4EADF; color:#5C3519; padding:6px 10px; border-radius:8px; margin:4px 0; }
+  table { width:100%; border-collapse:collapse; } td, th { text-align:left; padding:8px; border-bottom:1px solid #0001; vertical-align:top; }
+  .small { font-size:14px; color:#4A4048; } .hide { display:none; }
+</style>
+</head>
+<body>
+<header><h1>SkillMatch admin</h1><span id="who" class="small"></span><button class="alt" id="logout" hidden>Log out</button></header>
+<main>
+  <div id="msg"></div>
+
+  <section id="login" class="card">
+    <h2>Admin login</h2>
+    <form id="loginForm">
+      <label>Email</label><input id="email" type="email" autocomplete="username" required>
+      <label>Password</label><input id="password" type="password" autocomplete="current-password" required>
+      <p><button>Log in</button></p>
+    </form>
+    <form id="mfaForm" class="hide">
+      <p class="small">A code was emailed to you. With no email set up, it is printed in the server console.</p>
+      <label>Code</label><input id="code" inputmode="numeric" maxlength="10" required>
+      <p><button>Verify</button></p>
+    </form>
+  </section>
+
+  <section id="app" class="hide">
+    <nav id="tabs"></nav>
+
+    <div id="tab-add" class="card hide">
+      <h2>Add a listing</h2>
+      <p class="small">Paste the listing text as published. The server splits it into requirements and adds warning flags. Nothing is visible to students until you publish.</p>
+      <form id="addForm">
+        <div class="row"><div><label>Title</label><input name="title" required minlength="3"></div>
+          <div><label>Organisation</label><input name="organisation" required minlength="2"></div></div>
+        <div class="row"><div><label>Type</label><select name="type"><option value="internship">Internship</option><option value="wbl">WBL placement</option></select></div>
+          <div><label>Where it came from</label><select name="source">
+            <option value="partner_list">Attachment Office partner list</option><option value="careers_email">Careers Office email</option>
+            <option value="career_page">Organisation career page</option><option value="job_platform">Job platform</option>
+            <option value="referral">Referral</option><option value="other">Other</option></select></div></div>
+        <div class="row"><div><label>Source link</label><input name="source_url" placeholder="https://..."></div>
+          <div><label>Apply link</label><input name="apply_url" placeholder="https://..."></div></div>
+        <div class="row"><div><label>Contact email</label><input name="contact_email"></div>
+          <div><label>Closing date</label><input name="closing_date" type="date"></div></div>
+        <label>Listing text</label><textarea name="description" required minlength="30"></textarea>
+        <p><button>Save as pending</button></p>
+      </form>
+    </div>
+
+    <div id="tab-list" class="card hide"><h2 id="listTitle"></h2><div id="listBody"></div></div>
+
+    <div id="review" class="card hide">
+      <h2 id="rvTitle"></h2><div id="rvMeta" class="small"></div><div id="rvFlags"></div>
+      <label>Requirements (one per line, shown to students one by one)</label>
+      <textarea id="rvReqs"></textarea>
+      <p><button id="rvSave" class="alt">Save requirements</button> <button id="rvPublish">Publish</button> <button id="rvRemove" class="bad">Remove</button></p>
+    </div>
+
+    <div id="tab-reports" class="card hide"><h2>Open reports</h2><div id="repBody"></div></div>
+
+    <div id="tab-export" class="card hide"><h2>Research exports</h2>
+      <p class="small">Participants appear as codes, never emails.</p>
+      <p><button data-csv="sessions">Download sessions.csv</button> <button data-csv="survey">Download survey.csv</button></p>
+      <h3>Overview</h3><pre id="stats" class="small"></pre>
+    </div>
+  </section>
+</main>
+<script>
+const API = "/api/v1";
+let access = sessionStorage.getItem("sm_admin") || "", mfa = "", current = null;
+const $ = (id) => document.getElementById(id);
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) { if (k === "onclick") n.onclick = v; else n.setAttribute(k, v); }
+  for (const c of kids) n.append(c);
+  return n;
+}
+function say(text, ok) { const m = $("msg"); m.replaceChildren(); if (text) m.append(el("div", { class: "msg " + (ok ? "ok" : "err") }, text)); }
+async function api(path, opts = {}) {
+  const r = await fetch(API + path, { ...opts, headers: { "content-type": "application/json", ...(access ? { authorization: "Bearer " + access } : {}), ...(opts.headers || {}) } });
+  if (r.status === 401 && access) { logout(); throw new Error("Please log in again."); }
+  const ct = r.headers.get("content-type") || "";
+  const data = ct.includes("json") ? await r.json() : await r.text();
+  if (!r.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Please check what you entered.");
+  return data;
+}
+function show(loggedIn) { $("login").classList.toggle("hide", loggedIn); $("app").classList.toggle("hide", !loggedIn); $("logout").hidden = !loggedIn; }
+function logout() { access = ""; sessionStorage.removeItem("sm_admin"); show(false); say(""); }
+$("logout").onclick = logout;
+
+$("loginForm").onsubmit = async (e) => {
+  e.preventDefault(); say("");
+  try {
+    const d = await api("/auth/login", { method: "POST", body: JSON.stringify({ email: $("email").value, password: $("password").value }) });
+    if (d.mfa_required) { mfa = d.mfa_token; $("mfaForm").classList.remove("hide"); say("Enter the code we sent you.", true); }
+    else if (d.user && d.user.is_admin) done(d); else say("This account is not an admin.");
+  } catch (err) { say(err.message); }
+};
+$("mfaForm").onsubmit = async (e) => {
+  e.preventDefault();
+  try { done(await api("/auth/login/mfa", { method: "POST", body: JSON.stringify({ mfa_token: mfa, code: $("code").value }) })); }
+  catch (err) { say(err.message); }
+};
+function done(d) { access = d.access_token; sessionStorage.setItem("sm_admin", access); $("who").textContent = d.user.email; show(true); say(""); tab("pending"); }
+
+const TABS = [["add", "Add listing"], ["pending", "Pending"], ["published", "Published"], ["reports", "Reports"], ["export", "Research"]];
+TABS.forEach(([k, label]) => $("tabs").append(el("button", { id: "t-" + k, onclick: () => tab(k) }, label)));
+function tab(k) {
+  say(""); $("review").classList.add("hide");
+  for (const [t] of TABS) $("t-" + t).classList.toggle("on", t === k);
+  for (const id of ["tab-add", "tab-list", "tab-reports", "tab-export"]) $(id).classList.add("hide");
+  if (k === "add") $("tab-add").classList.remove("hide");
+  else if (k === "reports") { $("tab-reports").classList.remove("hide"); loadReports(); }
+  else if (k === "export") { $("tab-export").classList.remove("hide"); api("/admin/stats").then((s) => $("stats").textContent = JSON.stringify(s, null, 2)).catch((e) => say(e.message)); }
+  else { $("tab-list").classList.remove("hide"); $("listTitle").textContent = k === "pending" ? "Pending review" : "Published"; loadList(k); }
+}
+
+async function loadList(status) {
+  const rows = await api("/admin/listings?status=" + status).catch((e) => { say(e.message); return []; });
+  const body = $("listBody"); body.replaceChildren();
+  if (!rows.length) { body.append(el("p", { class: "small" }, "Nothing here yet.")); return; }
+  const t = el("table"); t.append(el("tr", {}, ...["Title", "Type", "Closes", "Flags", ""].map((h) => el("th", {}, h))));
+  for (const l of rows) {
+    const warn = l.flags.filter((f) => f.severity === "warning").length;
+    t.append(el("tr", {}, el("td", {}, l.title + " (" + l.organisation + ")"), el("td", {}, l.type), el("td", {}, l.closing_date || "none"),
+      el("td", {}, warn ? warn + " warning(s)" : "none"), el("td", {}, el("button", { class: "alt", onclick: () => openReview(l.id) }, "Review"))));
+  }
+  body.append(t);
+}
+
+$("addForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target).entries());
+  if (!f.closing_date) delete f.closing_date;
+  try { const l = await api("/admin/listings", { method: "POST", body: JSON.stringify(f) }); e.target.reset(); render(l); say("Saved as pending. Check the requirements, then publish.", true); }
+  catch (err) { say(err.message); }
+};
+async function openReview(id) { try { render(await api("/admin/listings/" + id)); } catch (e) { say(e.message); } }
+function render(l) {
+  current = l; $("review").classList.remove("hide"); $("tab-add").classList.add("hide"); $("tab-list").classList.add("hide");
+  $("rvTitle").textContent = l.title + " (" + l.status + ")";
+  $("rvMeta").textContent = l.organisation + " | " + l.type + " | source: " + l.source + " | closes: " + (l.closing_date || "none");
+  const fl = $("rvFlags"); fl.replaceChildren();
+  if (!l.flags.length) fl.append(el("p", { class: "small" }, "No warning flags."));
+  l.flags.forEach((f) => fl.append(el("div", { class: "flag" }, (f.severity === "warning" ? "Warning: " : "Note: ") + f.message)));
+  $("rvReqs").value = l.requirements.map((r) => r.text).join("\n");
+  $("rvPublish").disabled = l.status === "published";
+}
+async function saveReqs() {
+  const lines = $("rvReqs").value.split("\n").map((s) => s.trim()).filter(Boolean);
+  render(await api("/admin/listings/" + current.id + "/requirements", { method: "PUT", body: JSON.stringify({ requirements: lines }) }));
+}
+$("rvSave").onclick = async () => { try { await saveReqs(); say("Requirements saved.", true); } catch (e) { say(e.message); } };
+$("rvPublish").onclick = async () => {
+  try { await saveReqs(); const l = await api("/admin/listings/" + current.id + "/publish", { method: "POST" }); render(l); say("Published. Students can see it now.", true); }
+  catch (e) { say(e.message); }
+};
+$("rvRemove").onclick = async () => { if (!confirm("Remove this listing?")) return; try { render(await api("/admin/listings/" + current.id + "/remove", { method: "POST" })); say("Removed.", true); } catch (e) { say(e.message); } };
+
+async function loadReports() {
+  const rows = await api("/admin/reports").catch((e) => { say(e.message); return []; });
+  const body = $("repBody"); body.replaceChildren();
+  if (!rows.length) { body.append(el("p", { class: "small" }, "No open reports.")); return; }
+  for (const r of rows) {
+    body.append(el("div", { class: "card" }, el("b", {}, "Listing #" + r.listing_id + ": " + r.reason), el("p", { class: "small" }, r.note || "(no note)"),
+      el("button", { class: "alt", onclick: () => openReview(r.listing_id) }, "Open listing"), " ",
+      el("button", { class: "alt", onclick: () => resolve(r.id, "dismiss") }, "Dismiss"), " ",
+      el("button", { class: "bad", onclick: () => resolve(r.id, "remove_listing") }, "Remove listing")));
+  }
+}
+async function resolve(id, action) { try { await api("/admin/reports/" + id + "/resolve", { method: "POST", body: JSON.stringify({ action }) }); loadReports(); } catch (e) { say(e.message); } }
+
+document.querySelectorAll("[data-csv]").forEach((b) => b.onclick = async () => {
+  try {
+    const text = await api("/admin/export/" + b.dataset.csv + ".csv");
+    const a = el("a", { href: URL.createObjectURL(new Blob([text], { type: "text/csv" })), download: b.dataset.csv + ".csv" }); a.click();
+  } catch (e) { say(e.message); }
+});
+if (access) { api("/admin/stats").then(() => { show(true); tab("pending"); }).catch(() => show(false)); }
+</script>
+</body>
+</html>
