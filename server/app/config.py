@@ -25,6 +25,9 @@ class Settings:
         self.smtp_user = os.getenv("SMTP_USER", "")
         self.smtp_password = os.getenv("SMTP_PASSWORD", "")
         self.smtp_from = os.getenv("SMTP_FROM", "SkillMatch <no-reply@example.com>")
+        # Optional: send mail through an HTTPS web hook (e.g. a Google Apps Script) when SMTP ports are blocked.
+        self.mail_webhook_url = os.getenv("MAIL_WEBHOOK_URL", "")
+        self.mail_webhook_secret = os.getenv("MAIL_WEBHOOK_SECRET", "")
         self.dev_echo_otp = _flag("DEV_ECHO_OTP")
         self.embedder = os.getenv("EMBEDDER", "tfidf").lower()
         self.sbert_model = os.getenv("SBERT_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
