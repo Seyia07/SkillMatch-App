@@ -16,7 +16,7 @@ android {
         versionName = "1.0"
         // Where the app looks for the SkillMatch server. 10.0.2.2 is the computer, seen from the emulator.
         // It can also be changed inside the app (Account > Server address).
-        buildConfigField("String", "DEFAULT_SERVER", "\"http://10.0.2.2:8000\"")
+        buildConfigField("String", "DEFAULT_SERVER", "\"https://skillmatch-server-q2ir.onrender.com\"")
     }
 
     buildTypes {

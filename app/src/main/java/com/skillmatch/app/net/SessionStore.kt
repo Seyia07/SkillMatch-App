@@ -54,8 +54,16 @@ class SessionStore(context: Context) {
     private val box = SecretBox()
 
     var baseUrl: String
-        get() = prefs.getString("base_url", null)?.takeIf { it.isNotBlank() } ?: BuildConfig.DEFAULT_SERVER
-        set(value) { prefs.edit().putString("base_url", value.trim().trimEnd('/')).apply() }
+        get() = clean(prefs.getString("base_url_v2", null)?.takeIf { it.isNotBlank() } ?: BuildConfig.DEFAULT_SERVER)
+        set(value) { prefs.edit().putString("base_url_v2", clean(value)).apply() }
+
+    /** Trims, drops a pasted /health or trailing slash, and uses https for online servers (http gets redirected and fails). */
+    private fun clean(raw: String): String {
+        var v = raw.trim().trimEnd('/').removeSuffix("/health").trimEnd('/')
+        val local = Regex("^http://(10\\.0\\.2\\.2|localhost|127\\.|192\\.168\\.|10\\.)").containsMatchIn(v)
+        if (v.startsWith("http://") && !local) v = "https://" + v.removePrefix("http://")
+        return v
+    }
 
     val accessToken: String? get() = prefs.getString("access", null)?.let { box.decrypt(it) }
     val refreshToken: String? get() = prefs.getString("refresh", null)?.let { box.decrypt(it) }

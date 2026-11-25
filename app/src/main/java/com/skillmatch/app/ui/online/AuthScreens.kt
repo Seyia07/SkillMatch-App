@@ -1,6 +1,9 @@
 package com.skillmatch.app.ui.online
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -25,14 +28,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.skillmatch.app.R
 import com.skillmatch.app.ui.components.MessageBanner
 import com.skillmatch.app.ui.components.MessageKind
-import com.skillmatch.app.ui.components.PhotoHeader
 import com.skillmatch.app.ui.components.PrimaryButton
 import com.skillmatch.app.ui.components.ScreenTitle
 import com.skillmatch.app.ui.components.SecondaryButton
@@ -43,10 +48,18 @@ import com.skillmatch.app.ui.theme.Sm
 @Composable
 fun AuthPane(state: OnlineState, vm: OnlineViewModel) {
     val auth = state.auth
-    var showConnection by rememberSaveable { mutableStateOf(false) }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        PhotoHeader(R.drawable.photo_team) {
-            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 28.dp)) {
+    Box(Modifier.fillMaxSize()) {
+        Image(
+            painterResource(R.drawable.photo_team), contentDescription = null, contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize(),
+        )
+        Box(
+            Modifier.matchParentSize().background(
+                Brush.verticalGradient(listOf(Sm.PlumDark.copy(alpha = 0.72f), Sm.PlumDark.copy(alpha = 0.45f), Sm.PlumDark.copy(alpha = 0.85f))),
+            ),
+        )
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 12.dp)) {
                 ScreenTitle(
                     when (auth.step) {
                         AuthStep.Login -> "Welcome back"
@@ -60,25 +73,21 @@ fun AuthPane(state: OnlineState, vm: OnlineViewModel) {
                     color = Sm.PlumTint, style = MaterialTheme.typography.bodyMedium,
                 )
             }
-        }
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            state.notice?.let { NoticeBanner(it, vm::clearNotice) }
-            auth.error?.let { MessageBanner(it, MessageKind.Error) }
-            auth.info?.let { MessageBanner(it, MessageKind.Info) }
-            auth.devCode?.let { MessageBanner("Demo code: $it", MessageKind.Warning) }
-            when (auth.step) {
-                AuthStep.Login -> LoginStep(auth, vm)
-                AuthStep.SignupEmail -> SignupEmailStep(auth, vm)
-                AuthStep.SignupCode -> SignupCodeStep(auth, vm)
-                AuthStep.SignupDetails -> SignupDetailsStep(auth, vm)
-                AuthStep.ForgotEmail -> ForgotEmailStep(auth, vm)
-                AuthStep.ForgotReset -> ForgotResetStep(auth, vm)
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                state.notice?.let { NoticeBanner(it, vm::clearNotice) }
+                auth.error?.let { MessageBanner(it, MessageKind.Error) }
+                auth.info?.let { MessageBanner(it, MessageKind.Info) }
+                auth.devCode?.let { MessageBanner("Demo code: $it", MessageKind.Warning) }
+                when (auth.step) {
+                    AuthStep.Login -> LoginStep(auth, vm)
+                    AuthStep.SignupEmail -> SignupEmailStep(auth, vm)
+                    AuthStep.SignupCode -> SignupCodeStep(auth, vm)
+                    AuthStep.SignupDetails -> SignupDetailsStep(auth, vm)
+                    AuthStep.ForgotEmail -> ForgotEmailStep(auth, vm)
+                    AuthStep.ForgotReset -> ForgotResetStep(auth, vm)
+                }
+                Spacer(Modifier.height(8.dp))
             }
-            TextButton(onClick = { showConnection = !showConnection }) {
-                Text(if (showConnection) "Hide server address" else "Server address", color = Sm.Plum, style = MaterialTheme.typography.labelLarge)
-            }
-            if (showConnection) ConnectionCard(state.serverUrl, state.connectionError, vm::setServerUrl)
-            Spacer(Modifier.height(8.dp))
         }
     }
 }
@@ -113,7 +122,7 @@ private fun SignupEmailStep(auth: AuthState, vm: OnlineViewModel) {
         PrimaryButton(if (auth.busy) "Please wait…" else "Send code", onClick = { vm.requestSignupCode(email) }, enabled = !auth.busy)
     }
     TextButton(onClick = { vm.goStep(AuthStep.Login) }) {
-        Text("Back to log in", color = Sm.Plum, style = MaterialTheme.typography.labelLarge)
+        Text("Back to log in", color = Color.White, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -130,10 +139,10 @@ private fun SignupCodeStep(auth: AuthState, vm: OnlineViewModel) {
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         TextButton(onClick = { vm.requestSignupCode(auth.email) }) {
-            Text("Send a new code", color = Sm.Plum, style = MaterialTheme.typography.labelLarge)
+            Text("Send a new code", color = Color.White, style = MaterialTheme.typography.labelLarge)
         }
         TextButton(onClick = { vm.goStep(AuthStep.SignupEmail) }) {
-            Text("Use another email", color = Sm.Plum, style = MaterialTheme.typography.labelLarge)
+            Text("Use another email", color = Color.White, style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -186,7 +195,7 @@ private fun ForgotEmailStep(auth: AuthState, vm: OnlineViewModel) {
         PrimaryButton(if (auth.busy) "Please wait…" else "Send code", onClick = { vm.requestReset(email) }, enabled = !auth.busy)
     }
     TextButton(onClick = { vm.goStep(AuthStep.Login) }) {
-        Text("Back to log in", color = Sm.Plum, style = MaterialTheme.typography.labelLarge)
+        Text("Back to log in", color = Color.White, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -204,6 +213,6 @@ private fun ForgotResetStep(auth: AuthState, vm: OnlineViewModel) {
         PrimaryButton(if (auth.busy) "Please wait…" else "Change password", onClick = { vm.completeReset(code, password) }, enabled = !auth.busy)
     }
     TextButton(onClick = { vm.goStep(AuthStep.Login) }) {
-        Text("Back to log in", color = Sm.Plum, style = MaterialTheme.typography.labelLarge)
+        Text("Back to log in", color = Color.White, style = MaterialTheme.typography.labelLarge)
     }
 }
