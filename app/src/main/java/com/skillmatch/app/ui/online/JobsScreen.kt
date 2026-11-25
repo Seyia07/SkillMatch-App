@@ -128,7 +128,7 @@ private fun ResearchBanner(r: ResearchState, onFinish: () -> Unit) {
         )
         Text(
             "Look through the listings and tap the star on the ones you would apply for. " +
-                "Shortlisted: ${r.shortlist.size}",
+                    "Shortlisted: ${r.shortlist.size}",
             style = MaterialTheme.typography.bodyMedium, color = Sm.Muted,
         )
         PrimaryButton("Finish session", onClick = onFinish)
@@ -172,7 +172,7 @@ private fun JobCard(job: JobSummary, showFit: Boolean, research: ResearchState, 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 StyleChip(fitStyle(fit.label))
                 if (fit.overall != null) {
-                    Text("${fit.overall}% of requirements", style = MaterialTheme.typography.bodyMedium, color = Sm.Muted)
+                    Text("${fit.overall}% match", style = MaterialTheme.typography.bodyMedium, color = Sm.Muted)
                 }
             }
         }

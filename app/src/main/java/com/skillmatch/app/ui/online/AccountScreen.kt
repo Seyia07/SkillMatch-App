@@ -69,7 +69,7 @@ fun AccountScreen(state: OnlineState, vm: OnlineViewModel) {
             Text("How matching works", style = MaterialTheme.typography.titleMedium, color = Sm.PlumDark)
             Text(
                 "Each listing is split into its separate requirements. Your skills are compared with each one, and every requirement is marked Met, Partly met or Missing. " +
-                        "The overall fit is the share of requirements you meet. It is a guide only. Admins check each listing before it appears, and listings with warning signs are flagged.",
+                        "The overall fit comes from a model trained on real resume and job pairs. It is a guide only. Admins check each listing before it appears, and listings with warning signs are flagged.",
                 style = MaterialTheme.typography.bodyMedium, color = Sm.Muted,
             )
         }

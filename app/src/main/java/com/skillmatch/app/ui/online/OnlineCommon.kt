@@ -120,9 +120,9 @@ fun SelectableChip(text: String, selected: Boolean, onClick: () -> Unit, modifie
 
 /** Colour, icon and words together, so colour is never the only signal. */
 fun fitStyle(label: String): LabelStyle = when (label) {
-    "Strong fit" -> LabelStyle("Strong fit", Sm.GreenTint, Sm.GreenDark, Sm.Green, Icons.Filled.Check)
-    "Possible fit" -> LabelStyle("Possible fit", Sm.BrownTint, Sm.BrownDark, Sm.Brown, Icons.Filled.Remove)
-    "Low fit" -> LabelStyle("Low fit", Sm.BerryTint, Sm.BerryDark, Sm.Berry, Icons.Filled.Close)
+    "Good Fit", "Strong fit" -> LabelStyle("Good fit", Sm.GreenTint, Sm.GreenDark, Sm.Green, Icons.Filled.Check)
+    "Potential Fit", "Possible fit" -> LabelStyle("Potential fit", Sm.BrownTint, Sm.BrownDark, Sm.Brown, Icons.Filled.Remove)
+    "No Fit", "Low fit" -> LabelStyle("No fit", Sm.BerryTint, Sm.BerryDark, Sm.Berry, Icons.Filled.Close)
     else -> LabelStyle(label, Sm.BlueBg, Sm.BlueDeep, Sm.BlueLine, Icons.Filled.Info)
 }
 
