@@ -1,6 +1,8 @@
 """Sends one-time codes. With no SMTP_HOST set, codes are printed to the console (development)."""
 import logging
+import json
 import smtplib
+import urllib.request
 from email.message import EmailMessage
 
 from .config import settings
@@ -12,6 +14,15 @@ outbox: list[dict] = []  # kept in memory so tests and demos can read the last m
 def send_email(to: str, subject: str, body: str) -> None:
     outbox.append({"to": to, "subject": subject, "body": body})
     del outbox[:-50]
+    if settings.mail_webhook_url:
+        try:
+            payload = json.dumps({"secret": settings.mail_webhook_secret, "to": to, "subject": subject, "body": body}).encode("utf-8")
+            req = urllib.request.Request(settings.mail_webhook_url, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+            with urllib.request.urlopen(req, timeout=20) as r:
+                r.read()
+        except Exception:  # never leak mail errors to the caller
+            log.exception("Failed to send email to %s via web hook", to)
+        return
     if not settings.smtp_host:
         log.warning("EMAIL (not sent, no SMTP configured) to=%s subject=%s\n%s", to, subject, body)
         return
